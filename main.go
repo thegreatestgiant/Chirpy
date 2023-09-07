@@ -19,6 +19,6 @@ func main() {
 		Handler: corsMux,
 	}
 
-	fmt.Printf("Listening on port %v\n", port)
+	fmt.Printf("Listening to FileServer in %s on port %v\n", fileServerPath, port)
 	log.Fatal(server.ListenAndServe())
 }
