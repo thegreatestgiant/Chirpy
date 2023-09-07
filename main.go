@@ -3,17 +3,27 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
 	const port = "8000"
 	const fileServerPath = "."
 
-	mux := http.NewServeMux()
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(fileServerPath))))
-	mux.HandleFunc("/healthz", handlerReadiness)
+	apiCfg := apiConfig{
+		fileserverHits: 0,
+	}
 
-	corsMux := middlewareCors(mux)
+	r := chi.NewRouter()
+	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(fileServerPath))))
+	r.Handle("/app", fsHandler)
+	r.Handle("/app/*", fsHandler)
+	r.Get("/healthz", handlerReadiness)
+	r.Get("/metrics", apiCfg.getMetrics)
+	r.Get("/reset", apiCfg.resetMetrics)
+
+	corsMux := middlewareCors(r)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -22,10 +32,4 @@ func main() {
 
 	log.Printf("Listening to FileServer in %s on port %v\n", fileServerPath, port)
 	log.Fatal(server.ListenAndServe())
-}
-
-func handlerReadiness(w http.ResponseWriter, r *http.Request) {
-	r.Header.Add("Content-Type", "text/plain; charset=utf-8 ")
-	w.WriteHeader(200)
-	w.Write([]byte("OK"))
 }
