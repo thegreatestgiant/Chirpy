@@ -5,14 +5,26 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/thegreatestgiant/go-server/internal/database"
 )
+
+type apiConfig struct {
+	fileserverHits int
+	DB             *database.DB
+}
 
 func main() {
 	const port = "8000"
 	const fileServerPath = "."
+	const dbPath = "database.json"
 
+	db, err := database.NewDB(dbPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 	apiCfg := apiConfig{
 		fileserverHits: 0,
+		DB:             db,
 	}
 
 	r := chi.NewRouter()
@@ -26,8 +38,12 @@ func main() {
 
 	api.Get("/healthz", handlerReadiness)
 	api.Get("/reset", apiCfg.resetMetrics)
+	api.Get("/chirps", apiCfg.handlerGetChirps)
+	api.Get("/reset", apiCfg.handlerResetDB)
+	api.Get("/chirps/{chirpID}", apiCfg.handlerGetChirpsByID)
 
-	api.Post("/validate_chirp", validateLength)
+	api.Post("/chirps", apiCfg.handlerCreateChirp)
+	api.Post("/users", apiCfg.handlerCreateUser)
 
 	r.Mount("/api", api)
 	r.Mount("/admin", admin)
