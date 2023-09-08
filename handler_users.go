@@ -1,6 +1,7 @@
 package main
 
 import (
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -20,7 +21,11 @@ func (cfg *apiConfig) handlerGetusers(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	email := decodeJSON(w, r)
-	user, err := cfg.DB.CreateUser(email.Email)
+	pass, err := bcrypt.GenerateFromPassword([]byte(email.Password), 10)
+	if err != nil {
+		errorResp(w, 400, "Error Parsing password")
+	}
+	user, err := cfg.DB.CreateUser(string(pass), email.Email)
 	if err != nil {
 		errorResp(w, 400, err.Error())
 	}

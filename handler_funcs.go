@@ -10,6 +10,7 @@ import (
 type parameters struct {
 	Body  string `json:"body"`
 	Email string `json:"email"`
+	Password string `json:"password"`
 }
 
 func handlerReadiness(w http.ResponseWriter, r *http.Request) {
