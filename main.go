@@ -41,6 +41,8 @@ func main() {
 	api.Get("/chirps", apiCfg.handlerGetChirps)
 	api.Get("/reset", apiCfg.handlerResetDB)
 	api.Get("/chirps/{chirpID}", apiCfg.handlerGetChirpsByID)
+	api.Get("/users", apiCfg.handlerGetusers)
+	api.Get("/users/{UserID}", apiCfg.handlerGetUserByID)
 
 	api.Post("/chirps", apiCfg.handlerCreateChirp)
 	api.Post("/users", apiCfg.handlerCreateUser)
