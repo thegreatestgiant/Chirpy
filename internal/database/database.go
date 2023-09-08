@@ -7,6 +7,8 @@ import (
 	"sync"
 )
 
+var ErrNotExist = errors.New("resource does not exist")
+
 type DB struct {
 	Path string
 	Mux  *sync.RWMutex
@@ -14,12 +16,7 @@ type DB struct {
 
 type DBStructure struct {
 	Chirps map[int]Chirp `json:"chirps"`
-	Users map[int]User `json:"users"`
-}
-
-type Chirp struct {
-	Body string `json:"body"`
-	ID   int    `json:"id"`
+	Users  map[int]User  `json:"users"`
 }
 
 func NewDB(path string) (*DB, error) {
@@ -34,7 +31,7 @@ func NewDB(path string) (*DB, error) {
 func (db *DB) createDB() error {
 	dbStructure := DBStructure{
 		Chirps: map[int]Chirp{},
-		Users: map[int]User{},
+		Users:  map[int]User{},
 	}
 	return db.writeDB(dbStructure)
 }
@@ -45,6 +42,14 @@ func (db *DB) ensureDB() error {
 		return db.createDB()
 	}
 	return err
+}
+
+func (db *DB) ResetDB() error {
+	err := os.Remove(db.Path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return db.ensureDB()
 }
 
 func (db *DB) loadDB() (DBStructure, error) {
@@ -77,9 +82,4 @@ func (db *DB) writeDB(dbStructure DBStructure) error {
 		return err
 	}
 	return nil
-}
-
-func (db *DB) ResetDB() {
-	os.Remove(db.Path)
-	db.createDB()
 }

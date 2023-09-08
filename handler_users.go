@@ -1,46 +1,67 @@
 package main
 
 import (
-	"golang.org/x/crypto/bcrypt"
+	"errors"
 	"net/http"
-	"sort"
-	"strconv"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/thegreatestgiant/go-server/internal/auth"
+	"github.com/thegreatestgiant/go-server/internal/database"
 )
 
-func (cfg *apiConfig) handlerGetusers(w http.ResponseWriter, r *http.Request) {
+type User struct {
+	ID       int    `json:"id"`
+	Email    string `json:"email"`
+	Password string `json:"-"`
+}
 
-	users, err := cfg.DB.GetUsers()
-	if err != nil {
-		errorResp(w, http.StatusInternalServerError, "Couldn't get Users")
-	}
-	sort.Slice(users, func(i, j int) bool { return users[i].ID < users[j].ID })
-	JSONResp(w, 200, users)
+type response struct {
+	User
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
-	email := decodeJSON(w, r)
-	pass, err := bcrypt.GenerateFromPassword([]byte(email.Password), 10)
+	params := decodeJSON(w, r)
+
+	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
-		errorResp(w, 400, "Error Parsing password")
+		respondWithError(w, 400, "Error Parsing password")
 	}
-	user, err := cfg.DB.CreateUser(string(pass), email.Email)
+
+	user, err := cfg.DB.CreateUser(params.Email, hashedPassword)
 	if err != nil {
-		errorResp(w, 400, err.Error())
+		if errors.Is(err, database.ErrAlreadyExists) {
+			respondWithError(w, http.StatusConflict, "User already exists")
+			return
+		}
+
+		respondWithError(w, 500, "Couldn't create user")
 	}
-	JSONResp(w, 201, user)
+
+	respondWithJSON(w, 201, response{
+		User: User{
+			ID:    user.ID,
+			Email: user.Email,
+		},
+	})
 }
 
-func (cfg *apiConfig) handlerGetUserByID(w http.ResponseWriter, r *http.Request) {
-	strUserID := chi.URLParam(r, "UserID")
-	UserID, err := strconv.Atoi(strUserID)
+func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
+	params := decodeJSON(w, r)
+
+	user, err := cfg.DB.GetUserByEmail(params.Email)
 	if err != nil {
-		errorResp(w, http.StatusBadRequest, "Invalid UserID")
+		respondWithError(w, 500, "Couldn't Get email")
+		return
 	}
-	users, err := cfg.DB.GetUser(UserID)
+
+	err = auth.CheckPasswordHash(params.Password, user.HashedPassword)
 	if err != nil {
-		errorResp(w, 404, "UserID not found")
+		respondWithError(w, 401, "Invalid Password")
 	}
-	JSONResp(w, 200, users)
+
+	respondWithJSON(w, 200, response{
+		User: User{
+			ID:    user.ID,
+			Email: user.Email,
+		},
+	})
 }
