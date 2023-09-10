@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,23 +37,31 @@ func MakeJWT(userID int, tokenSecret string) (string, error) {
 	return token.SignedString([]byte(tokenSecret))
 }
 
-func ValidateJWT(tokenString, tokenSecret string) (string, string, error) {
+func ValidateJWT(tokenString, tokenSecret string) (string, int, error) {
 	claimsStruct := jwt.RegisteredClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, &claimsStruct, func(token *jwt.Token) (interface{}, error) {
 		return []byte(tokenSecret), nil
 	})
 	if err != nil {
-		return "", "", err
+		return "", 0, err
 	}
 
 	issuer, err := token.Claims.GetIssuer()
 	if err != nil {
-		return "", "", err
+		return "", 0, err
 	}
 
 	subject, err := token.Claims.GetSubject()
+	if err != nil {
+		return "", 0, err
+	}
 
-	return issuer, subject, err
+	id, err := strconv.Atoi(subject)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return issuer, id, nil
 }
 
 func GetBearerToken(headers http.Header) (string, error) {

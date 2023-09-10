@@ -25,9 +25,10 @@ func (db *DB) IsRevoked(token string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if _, ok := dbStructure.Revoked[token]; ok {
-		return true, nil
+	
+	if time, ok := dbStructure.Revoked[token]; !ok || time.IsZero() {
+		return false, nil
 	}
 
-	return false, nil
+	return true, nil
 }

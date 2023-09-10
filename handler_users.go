@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/thegreatestgiant/go-server/internal/auth"
 	"github.com/thegreatestgiant/go-server/internal/database"
@@ -96,7 +95,7 @@ func (cfg *apiConfig) handlerPutUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	issuer, idString, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	issuer, id, err := auth.ValidateJWT(token, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, 401, fmt.Sprintf("error parsing token: %v", err))
 		return
@@ -106,13 +105,6 @@ func (cfg *apiConfig) handlerPutUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := strconv.Atoi(idString)
-	if err != nil {
-		respondWithError(w, 401, fmt.Sprintf("error converting id to int: %v", err))
-		return
-	}
-
-	fmt.Println(params.Password)
 	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
 		respondWithError(w, 401, fmt.Sprintf("error hashing password: %v", err))
