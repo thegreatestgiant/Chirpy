@@ -23,8 +23,23 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't get Chirps")
 	}
 
+	authorID := -1
+	authorIDStr := r.URL.Query().Get("author_id")
+	if authorIDStr != "" {
+		authorID, err = strconv.Atoi(authorIDStr)
+		if err != nil {
+			respondWithError(w, 500, "Error converting query to int: "+err.Error())
+			return
+		}
+	}
+
+	sortOrd := r.URL.Query().Get("sort")
+
 	chirps := []Chirp{}
 	for _, dbChirp := range dbChirps {
+		if authorID != -1 && authorID != dbChirp.AuthorID {
+			continue
+		}
 		chirps = append(chirps, Chirp{
 			AuthorID: dbChirp.AuthorID,
 			ID:       dbChirp.ID,
@@ -33,9 +48,17 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
+		if sortOrd != "desc" {
+			return chirps[i].ID < chirps[j].ID
+		}
+		return chirps[i].ID > chirps[j].ID
 	})
+
 	respondWithJSON(w, 200, chirps)
+}
+
+func ReverseSlice[T any](s []T) {
+
 }
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
