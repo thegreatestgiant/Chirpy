@@ -7,10 +7,9 @@ import (
 )
 
 type parameters struct {
-	Body               string `json:"body"`
-	Email              string `json:"email"`
-	Password           string `json:"password"`
-	Expires_In_Seconds int `json:"expires_in_seconds,omitempty"`
+	Body     string `json:"body"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func handlerReadiness(w http.ResponseWriter, r *http.Request) {

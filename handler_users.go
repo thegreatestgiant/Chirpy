@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/thegreatestgiant/go-server/internal/auth"
 	"github.com/thegreatestgiant/go-server/internal/database"
@@ -20,7 +19,8 @@ type User struct {
 
 type response struct {
 	User
-	Token string `json:"token,omitempty"`
+	Token        string `json:"token,omitempty"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -63,25 +63,23 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 401, "Invalid Password:")
 	}
 
-	defaultExpiration := 60 * 60 * 24
-	if params.Expires_In_Seconds == 0 {
-		params.Expires_In_Seconds = defaultExpiration
-	} else if params.Expires_In_Seconds > defaultExpiration {
-		params.Expires_In_Seconds = defaultExpiration
-	}
-
-	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Duration(params.Expires_In_Seconds)*time.Second)
+	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, 401, fmt.Sprintf("Couldn't Create JWT: %v", err))
+	}
+
+	refreshToken, err := auth.MakeRefresh(user.ID, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, 401, fmt.Sprintf("Couldn't Create Refresh Token: %v", err))
 	}
 
 	respondWithJSON(w, 200, response{
 		User: User{
 			Email: user.Email,
 			ID:    user.ID,
-			Token: token,
 		},
-		Token: token,
+		Token:        token,
+		RefreshToken: refreshToken,
 	})
 }
 
@@ -98,9 +96,13 @@ func (cfg *apiConfig) handlerPutUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idString, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	issuer, idString, err := auth.ValidateJWT(token, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, 401, fmt.Sprintf("error parsing token: %v", err))
+		return
+	}
+	if issuer == "chirpy-refresh" {
+		respondWithError(w, 401, "Is a refresh token")
 		return
 	}
 

@@ -63,6 +63,8 @@ func main() {
 	api.Post("/chirps", apiCfg.handlerCreateChirp)
 	api.Post("/users", apiCfg.handlerCreateUser)
 	api.Post("/login", apiCfg.handlerLogin)
+	api.Post("/refresh", apiCfg.handlerRefresh)
+	api.Post("/revoke", apiCfg.handlerRevoke)
 
 	api.Put("/users", apiCfg.handlerPutUser)
 
