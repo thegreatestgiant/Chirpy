@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/thegreatestgiant/go-server/internal/auth"
 	"github.com/thegreatestgiant/go-server/internal/database"
 )
 
@@ -12,6 +13,17 @@ type data struct {
 }
 
 func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Request) {
+	apiKey, err := auth.GetApiKey(r.Header)
+	if err != nil {
+		respondWithError(w, 401, "Bad api key: "+err.Error())
+		return
+	}
+
+	if apiKey != cfg.polkaApi {
+		respondWithError(w, 401, "Bad API key"+apiKey)
+		return
+	}
+
 	params := decodeJSON(w, r)
 
 	if params.Event != "user.upgraded" {
@@ -19,7 +31,7 @@ func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err := cfg.DB.UpgradeUser(params.Data.UserID)
+	err = cfg.DB.UpgradeUser(params.Data.UserID)
 	if err != nil {
 		if errors.Is(err, database.ErrNotExist) {
 			respondWithError(w, http.StatusNotFound, "Couldn't find user")

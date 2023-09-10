@@ -15,12 +15,19 @@ type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
 	jwtSecret      string
+	polkaApi       string
 }
 
 func main() {
-	godotenv.Load()
+	godotenv.Load(".env")
 
-	jwtSecret := os.Getenv("JWT_SECRET")
+	jwtSecret, polkaApi := os.Getenv("JWT_SECRET"), os.Getenv("POLKA_KEY")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
+	if polkaApi == "" {
+		log.Fatal("POLKA_KEY environment variable is not set")
+	}
 	const port = "8000"
 	const fileServerPath = "."
 	const dbPath = "database.json"
@@ -43,6 +50,7 @@ func main() {
 		fileserverHits: 0,
 		DB:             db,
 		jwtSecret:      jwtSecret,
+		polkaApi:       polkaApi,
 	}
 
 	r := chi.NewRouter()
