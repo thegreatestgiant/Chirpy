@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
-	"github.com/thegreatestgiant/go-server/internal/database"
+	"github.com/thegreatestgiant/Chirpy/internal/database"
 )
 
 type apiConfig struct {

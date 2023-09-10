@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/thegreatestgiant/go-server/internal/auth"
-	"github.com/thegreatestgiant/go-server/internal/database"
+	"github.com/thegreatestgiant/Chirpy/internal/auth"
+	"github.com/thegreatestgiant/Chirpy/internal/database"
 )
 
 type data struct {

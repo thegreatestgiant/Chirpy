@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/thegreatestgiant/go-server/internal/auth"
+	"github.com/thegreatestgiant/Chirpy/internal/auth"
 )
 
 type Chirp struct {

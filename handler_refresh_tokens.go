@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/thegreatestgiant/go-server/internal/auth"
+	"github.com/thegreatestgiant/Chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
