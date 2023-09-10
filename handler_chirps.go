@@ -1,17 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/thegreatestgiant/go-server/internal/auth"
 )
 
 type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
+	AuthorID int    `json:"author_id"`
+	ID       int    `json:"id"`
+	Body     string `json:"body"`
 }
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
@@ -23,8 +26,9 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	chirps := []Chirp{}
 	for _, dbChirp := range dbChirps {
 		chirps = append(chirps, Chirp{
-			ID:   dbChirp.ID,
-			Body: dbChirp.Body,
+			AuthorID: dbChirp.AuthorID,
+			ID:       dbChirp.ID,
+			Body:     dbChirp.Body,
 		})
 	}
 
@@ -35,7 +39,19 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
+	accessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, fmt.Sprintf("User wasn't authenticated: %v", err))
+		return
+	}
+
 	params := decodeJSON(w, r)
+
+	_, id, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, 500, fmt.Sprintf("Unable to authenticat: %v", err))
+		return
+	}
 
 	if len(params.Body) > 140 {
 		respondWithError(w, 400, "chirp is too long")
@@ -59,7 +75,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	}
 	body := strings.Join(arr, " ")
 
-	chirp, err := cfg.DB.CreateChirp(body)
+	chirp, err := cfg.DB.CreateChirp(body, id)
 	if err != nil {
 		respondWithError(w, 400, err.Error())
 	}
@@ -76,11 +92,52 @@ func (cfg *apiConfig) handlerGetChirpsByID(w http.ResponseWriter, r *http.Reques
 	chirpID, err := strconv.Atoi(strChirpID)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid Chirp ID")
+		return
 	}
-	
+
 	chirps, err := cfg.DB.GetChirp(chirpID)
 	if err != nil {
 		respondWithError(w, 404, "chirpID not found")
+		return
 	}
+	respondWithJSON(w, 200, chirps)
+}
+
+func (cfg *apiConfig) handlerDeleteChirpsByID(w http.ResponseWriter, r *http.Request) {
+	strChirpID := chi.URLParam(r, "chirpID")
+	chirpID, err := strconv.Atoi(strChirpID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid Chirp ID")
+	}
+
+	accessToken, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, 401, fmt.Sprintf("User wasn't authenticated: %v", err))
+		return
+	}
+
+	_, id, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, 500, fmt.Sprintf("Unable to authenticat: %v", err))
+		return
+	}
+
+	chirps, err := cfg.DB.GetChirp(chirpID)
+	if err != nil {
+		respondWithError(w, 404, "chirpID not found")
+		return
+	}
+
+	if chirps.AuthorID != id {
+		respondWithError(w, 403, "You Don't own this chirp")
+		return
+	}
+
+	err = cfg.DB.DeleteChirp(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't delete chirp")
+		return
+	}
+
 	respondWithJSON(w, 200, chirps)
 }

@@ -68,6 +68,8 @@ func main() {
 
 	api.Put("/users", apiCfg.handlerPutUser)
 
+	api.Delete("/chirps/{chirpID}", apiCfg.handlerDeleteChirpsByID)
+
 	r.Mount("/api", api)
 	r.Mount("/admin", admin)
 
