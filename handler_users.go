@@ -10,10 +10,11 @@ import (
 )
 
 type User struct {
-	ID       int    `json:"id,omitempty"`
-	Email    string `json:"email,omitempty"`
-	Password string `json:"password,omitempty"`
-	Token    string `json:"token,omitempty"`
+	ID          int    `json:"id,omitempty"`
+	Email       string `json:"email,omitempty"`
+	Password    string `json:"password,omitempty"`
+	Token       string `json:"token,omitempty"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }
 
 type response struct {
@@ -42,8 +43,9 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 	respondWithJSON(w, 201, response{
 		User: User{
-			Email: user.Email,
-			ID:    user.ID,
+			Email:       user.Email,
+			ID:          user.ID,
+			IsChirpyRed: user.IsChirpyRed,
 		},
 	})
 }
@@ -74,8 +76,9 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, 200, response{
 		User: User{
-			Email: user.Email,
-			ID:    user.ID,
+			Email:       user.Email,
+			ID:          user.ID,
+			IsChirpyRed: user.IsChirpyRed,
 		},
 		Token:        token,
 		RefreshToken: refreshToken,

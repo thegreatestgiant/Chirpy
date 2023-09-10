@@ -65,6 +65,7 @@ func main() {
 	api.Post("/login", apiCfg.handlerLogin)
 	api.Post("/refresh", apiCfg.handlerRefresh)
 	api.Post("/revoke", apiCfg.handlerRevoke)
+	api.Post("/polka/webhooks", apiCfg.handlerPolkaWebhooks)
 
 	api.Put("/users", apiCfg.handlerPutUser)
 
