@@ -1,6 +1,20 @@
 # Chirpy
 
-Chirpy is a monolith REST API written in go that acts as a messaging platform
+Chirpy is a monolith REST API written in Go that acts as a messaging platform.
+
+## Boot.dev course context
+
+I built this for Boot.dev's
+[Learn HTTP Servers in Go](https://www.boot.dev/courses/learn-http-servers-golang)
+course (the "Chirpy" project).
+
+| | |
+|---|---|
+| Provided by Boot.dev | The course lessons, project spec, and the CLI test harness used to grade each chapter. There was no starter application. |
+| Written by me | All 22 commits and ~1,030 Go lines: routing, JSON handlers, JSON-file persistence, users and chirps, JWT access/refresh tokens with revocation, API-key webhook, metrics, CORS, and this README. |
+| Not provided | No starter app and no committed test suite. The course tests run through the Boot.dev CLI. |
+
+This is a learning project, not a production service.
 
 # The frontend
 The frontend can be accessed under /apps will be compiled from the root directory
